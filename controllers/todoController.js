@@ -1,4 +1,22 @@
 var bodyParser = require('body-parser');
+var mongoose = require('mongoose');
+
+// Connect to database
+mongoose.connect('mongodb://<username>:<password>@ds149414.mlab.com:49414/tododb', { useNewUrlParser: true});
+
+// Create schema - this is like blueprint (What kind of information can MongoDB expect)
+var todoSchema = new mongoose.Schema({
+   item: String
+});
+
+// Model based on todoSchema
+var Todo = mongoose.model('Todo', todoSchema);
+// Create an item of Todo model type, we pass object item: 'buy flowers' and we save it to database .save
+var itemOne = Todo({item: 'buy flowers'}).save((err) => {
+    if(err) throw err;
+    console.log('item saved');
+});
+
 
 var data = [
     {

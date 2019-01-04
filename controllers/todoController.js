@@ -2,7 +2,7 @@ var bodyParser = require('body-parser');
 var mongoose = require('mongoose');
 
 // Connect to database
-mongoose.connect('mongodb://<username>:<password>@ds149414.mlab.com:49414/tododb', { useNewUrlParser: true});
+mongoose.connect('<mongodburl>', { useNewUrlParser: true});
 
 // Create schema - this is like blueprint (What kind of information can MongoDB expect)
 var todoSchema = new mongoose.Schema({
@@ -11,43 +11,36 @@ var todoSchema = new mongoose.Schema({
 
 // Model based on todoSchema
 var Todo = mongoose.model('Todo', todoSchema);
-// Create an item of Todo model type, we pass object item: 'buy flowers' and we save it to database .save
-var itemOne = Todo({item: 'buy flowers'}).save((err) => {
-    if(err) throw err;
-    console.log('item saved');
-});
 
 
-var data = [
-    {
-        item: 'get milk'
-    },
-    {
-        item: 'walk dog'
-    },
-    {
-        item: 'code'
-    }
-];
+// var data = [{item: 'get milk'}, {item: 'walk dog'}, {item: 'code'}];
 
-var urlencodedParser = bodyParser.urlencoded({ extended: false })
+var urlencodedParser = bodyParser.urlencoded({ extended: false });
 
 module.exports = (app) => {
 
     app.get('/todo', (req, res) => {
-        res.render('todo', {todos: data});
+        // get data from mongodb and pass it to the view
+        Todo.find({}, (err, data) => { // Find data from collection and save it in data which we pass to todos key
+            if(err) throw err;
+            res.render('todo', {todos: data});
+        }); // retrieve all items from collection
     });
 
     app.post('/todo', urlencodedParser, (req, res) => {
-        data.push(req.body); // push received data to the array
-        res.json({todos: data}); // send updated data array as json back to front end
+        // get data from the view and add it to mongodb
+        var newTodo = Todo(req.body).save((err, data) => {
+           if(err) throw err;
+           res.json(data);
+        });
     });
 
     app.delete('/todo/:item', (req, res) => {
-        data = data.filter((todo) => { // Goal is to return false so we can filter out selected task from todo (data array)
-           return todo.item.replace(/ /g, '-') !== req.params.item;
+        // delete requested item from mongodb
+        Todo.find({item: req.params.item.replace(/\-/g, "")}).remove((err, data) => {
+            if(err) throw err;
+            res.json(data);
         });
-        res.json({data});
     });
 
 };
